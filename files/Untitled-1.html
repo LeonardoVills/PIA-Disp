@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Smart Home 3D - Gestión Total CRUD</title>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+
+<style>
+body { margin:0; overflow:hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f0f0f; }
+
+#ui {
+  position:absolute;
+  top:20px;
+  left:20px;
+  background:rgba(255, 255, 255, 0.92);
+  padding:20px;
+  border-radius:16px;
+  z-index:10;
+  width:320px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+h2 { margin: 0 0 15px 0; color: #1a1a1a; font-size: 20px; text-align: center; border-bottom: 2px solid #4CAF50; padding-bottom: 10px; }
+
+.config-box {
+  background: #fff3e0;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  border: 1px solid #ffe0b2;
+}
+
+.form-group { margin-bottom: 15px; }
+.form-group.hidden { display: none; } /* Ocultar para modo limitado */
+
+input, select {
+  width: 100%;
+  padding: 10px;
+  margin: 5px 0;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  box-sizing: border-box;
+  font-size: 14px;
+}
+
+button.add-btn {
+  width: 100%;
+  padding: 12px;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 14px;
+  transition: 0.3s;
+}
+
+.areaBlock {
+  margin-top: 20px;
+  padding: 15px;
+  background: white;
+  border-radius: 12px;
+  border: 2px solid #4CAF50;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.areaTitle {
+  display: block;
+  text-align: center;
+  color: #1a1a1a;
+  font-weight: bold;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 5px;
+}
+
+.deviceItem {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:13px;
+  margin: 10px 0;
+  padding: 8px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  border: 1px solid #eee;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.switch { cursor:pointer; padding:5px 12px; border-radius:20px; font-weight: bold; font-size: 11px; }
+.on { background:#4CAF50; color: white; }
+.off { background:#eee; color: #777; }
+
+.delete-btn {
+  cursor: pointer;
+  color: #ff4444;
+  font-size: 18px;
+  transition: transform 0.2s;
+}
+.delete-btn:hover {
+  transform: scale(1.2);
+}
+.delete-btn.hidden { display: none; }
+
+#stats {
+  position: absolute;
+  bottom: 25px;
+  right: 25px;
+  color: white;
+  background: rgba(0,0,0,0.8);
+  padding: 20px;
+  border-radius: 15px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="ui">
+  <h2>Smart Home 3D</h2>
+
+  <div class="config-box">
+    <small><b>ID de Sincronización (4 caracteres):</b></small>
+    <input id="inputUID" placeholder="Ej: 1JE3" oninput="this.value = this.value.toUpperCase()" onkeydown="if(event.key==='Enter') listenFirebase()">
+    <small style="font-size: 9px; color: #e65100;">* Escribe el ID y presiona Enter para sincronizar.</small>
+  </div>
+
+  <div id="status-msg" style="text-align: center; font-size: 11px; margin-bottom: 10px;">Esperando ID...</div>
+
+  <div id="admin-controls" class="form-group">
+    <input id="inputNombre" placeholder="Nombre dispositivo">
+    <input id="inputArea" placeholder="Área">
+    <select id="selectTipo">
+      <option value="LIGHT">Luz</option>
+      <option value="TV">TV</option>
+      <option value="AIR_CONDITIONER">Aire Acondicionado</option>
+      <option value="REFRIGERATOR">Refrigerador</option>
+    </select>
+    <button class="add-btn" onclick="agregarFirebase()">Añadir</button>
+  </div>
+
+  <div id="tabla"></div>
+</div>
+
+<div id="stats">
+  <div id="total-watts">0 W</div>
+  <div id="active-count">0 dispositivos ON</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBZBnSUs3gZ9r6o7napGPB6sEwsK9jAJ_s",
+  projectId: "gohome-74963",
+  appId: "1:212315721805:android:0248ae95985c9481478c04"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+let scene, camera, renderer, controls, snapshotUnsubscribe = null;
+let objetos3D = {}, areas3D = {}, dispositivos = [];
+let realUID = null;
+let isLimitedMode = false;
+
+function init3D(){
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0a0a0a);
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+  camera.position.set(8, 12, 14);
+
+  renderer = new THREE.WebGLRenderer({ antialias:true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+
+  // Agregar Controles de Orbita para rotar, zoom y pan
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+  const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+  sun.position.set(10, 20, 10);
+  scene.add(sun);
+  animate();
+}
+
+async function listenFirebase() {
+  const syncId = document.getElementById("inputUID").value.trim().toUpperCase();
+  if(!syncId || syncId.length < 4) return;
+
+  if(snapshotUnsubscribe) snapshotUnsubscribe();
+
+  const statusMsg = document.getElementById("status-msg");
+  statusMsg.innerText = "Buscando ID...";
+  statusMsg.style.color = "orange";
+
+  try {
+    const mappingDoc = await db.collection("sync_mappings").doc(syncId).get();
+
+    if (!mappingDoc.exists) {
+      statusMsg.innerText = "❌ ID no encontrado";
+      statusMsg.style.color = "red";
+      return;
+    }
+
+    const userData = mappingDoc.data();
+    const uidBuscado = userData.uid;
+
+    const userDoc = await db.collection("usuarios").doc(uidBuscado).get();
+    const userRealData = userDoc.data();
+
+    if (!userRealData) {
+        statusMsg.innerText = "❌ Error al leer usuario";
+        statusMsg.style.color = "red";
+        return;
+    }
+
+    realUID = userRealData.adminId || uidBuscado;
+    isLimitedMode = !!userRealData.adminId;
+
+    if (isLimitedMode) {
+        document.getElementById("admin-controls").classList.add("hidden");
+        statusMsg.innerText = "Modo Hijo Conectado (Solo control)";
+    } else {
+        document.getElementById("admin-controls").classList.remove("hidden");
+        statusMsg.innerText = "Modo Admin Conectado";
+    }
+
+    snapshotUnsubscribe = db.collection("dispositivos")
+      .where("propietarioUid", "==", realUID)
+      .onSnapshot((snapshot) => {
+        dispositivos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        statusMsg.style.color = "green";
+        actualizarModelo3D();
+        actualizarUI();
+      });
+
+  } catch (error) {
+    console.error("Error en Firebase:", error);
+    statusMsg.innerText = "❌ Error de conexión";
+    statusMsg.style.color = "red";
+  }
+}
+
+async function agregarFirebase() {
+  const nombre = document.getElementById("inputNombre").value;
+  const area = document.getElementById("inputArea").value;
+  const tipo = document.getElementById("selectTipo").value;
+
+  if(!realUID || isLimitedMode) return alert("No tienes permisos para añadir");
+  if(!nombre || !area) return alert("Completa los campos");
+
+  await db.collection("dispositivos").add({
+    nombre: nombre,
+    cuarto: area,
+    tipo: tipo,
+    encendido: false,
+    potenciaWatts: 0,
+    maxWatts: 100,
+    propietarioUid: realUID,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  document.getElementById("inputNombre").value = "";
+}
+
+async function toggleDevice(id, currentState) {
+  await db.collection("dispositivos").doc(id).update({
+    encendido: !currentState,
+    potenciaWatts: !currentState ? 60 : 0,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+
+async function eliminarDispositivo(id) {
+  if (isLimitedMode) return;
+  if (confirm("¿Estás seguro de que deseas eliminar este dispositivo?")) {
+    await db.collection("dispositivos").doc(id).delete();
+  }
+}
+
+function actualizarModelo3D() {
+  const areasActuales = [...new Set(dispositivos.map(d => d.cuarto))];
+
+  Object.keys(areas3D).forEach(area => {
+    if (!areasActuales.includes(area)) {
+      scene.remove(areas3D[area]);
+      delete areas3D[area];
+    }
+  });
+
+  areasActuales.forEach((areaName, i) => {
+    if (!areas3D[areaName]) {
+      const size = 5;
+      const piso = new THREE.Mesh(new THREE.BoxGeometry(size, 0.3, size), new THREE.MeshStandardMaterial({ color: 0x222222 }));
+      piso.position.set((i % 3) * 6 - 6, 0, Math.floor(i / 3) * 6 - 3);
+      scene.add(piso);
+      areas3D[areaName] = piso;
+    }
+  });
+
+  Object.keys(objetos3D).forEach(id => {
+    if (!dispositivos.find(d => d.id === id)) {
+      scene.remove(objetos3D[id]);
+      delete objetos3D[id];
+    }
+  });
+
+  dispositivos.forEach(d => {
+    if (!objetos3D[d.id]) {
+      const geo = d.tipo === 'LIGHT' ? new THREE.SphereGeometry(0.5) : new THREE.BoxGeometry(1, 1, 1);
+      const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0x333333 }));
+      const piso = areas3D[d.cuarto];
+      mesh.position.set(piso.position.x + Math.random()*2-1, 0.6, piso.position.z + Math.random()*2-1);
+      mesh.userData = { id: d.id };
+      scene.add(mesh);
+      objetos3D[d.id] = mesh;
+    }
+    const m = objetos3D[d.id];
+
+    if (d.encendido) {
+        m.material.color.set(d.tipo === 'LIGHT' ? 0xFFEB3B : 0x4CAF50);
+        m.material.emissive.set(d.tipo === 'LIGHT' ? 0xFFEB3B : 0x4CAF50);
+        m.material.emissiveIntensity = 0.6;
+    } else {
+        m.material.color.set(0x222222);
+        m.material.emissive.set(0x000000);
+        m.material.emissiveIntensity = 0;
+    }
+  });
+}
+
+function actualizarUI() {
+  let html = "";
+  const areas = [...new Set(dispositivos.map(d => d.cuarto))];
+  areas.forEach(area => {
+    html += `
+    <div class="areaBlock">
+      <span class="areaTitle">${area.toUpperCase()}</span>`;
+    dispositivos.filter(d => d.cuarto === area).forEach(d => {
+      html += `
+      <div class="deviceItem">
+        <span>${d.nombre}</span>
+        <div class="controls">
+          <span class="switch ${d.encendido?'on':'off'}" onclick="toggleDevice('${d.id}', ${d.encendido})">
+            ${d.encendido?'ON':'OFF'}
+          </span>
+          <span class="delete-btn ${isLimitedMode?'hidden':''}" onclick="eliminarDispositivo('${d.id}')">🗑️</span>
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  document.getElementById("tabla").innerHTML = html;
+}
+
+function animate(){
+  requestAnimationFrame(animate);
+  if (controls) controls.update(); // Actualizar controles cada frame
+  renderer.render(scene, camera);
+}
+init3D();
+</script>
+</body>
+</html>

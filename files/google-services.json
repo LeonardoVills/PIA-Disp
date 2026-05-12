@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "212315721805",
+    "project_id": "gohome-74963",
+    "storage_bucket": "gohome-74963.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:212315721805:android:0248ae95985c9481478c04",
+        "android_client_info": {
+          "package_name": "com.smarthome.dashboard"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBZBnSUs3gZ9r6o7napGPB6sEwsK9jAJ_s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

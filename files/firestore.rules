@@ -1,0 +1,75 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers ───────────────────────────────────────────────────────
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.role == 'ADMIN';
+    }
+
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    // ── Usuarios ──────────────────────────────────────────────────────
+    match /usuarios/{uid} {
+      allow read:   if isOwner(uid) || isAdmin();
+      allow create: if isAdmin();
+      allow update: if isOwner(uid) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── Dispositivos ──────────────────────────────────────────────────
+    match /dispositivos/{deviceId} {
+      allow read: if isAdmin() ||
+        (isAuthenticated() && resource.data.propietarioUid == request.auth.uid);
+
+      allow create: if isAdmin();
+      allow delete: if isAdmin();
+
+      // Admin actualiza todo; usuario solo puede cambiar encendido
+      allow update: if isAdmin() ||
+        (isAuthenticated() &&
+         resource.data.propietarioUid == request.auth.uid &&
+         request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['encendido', 'updatedAt', 'potenciaWatts']));
+
+      // ── Lecturas de consumo (subcollection) ─────────────────────────
+      match /lecturas/{readingId} {
+        allow read: if isAdmin() ||
+          (isAuthenticated() &&
+           get(/databases/$(database)/documents/dispositivos/$(deviceId))
+             .data.propietarioUid == request.auth.uid);
+        allow create: if isAuthenticated();
+        allow update, delete: if isAdmin();
+      }
+    }
+
+    // ── Categorías ────────────────────────────────────────────────────
+    match /categorias/{categoryId} {
+      allow read:  if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ── Eventos de seguridad ──────────────────────────────────────────
+    match /eventos_seguridad/{eventId} {
+      allow read:   if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAdmin() ||
+        (isAuthenticated() &&
+         request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['reconocido']));
+      allow delete: if isAdmin();
+    }
+
+    // ── Sesiones ──────────────────────────────────────────────────────
+    match /sesiones/{uid} {
+      allow read, write: if isOwner(uid) || isAdmin();
+    }
+  }
+}

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Hogar Inteligente</string>
+    <string name="nav_dashboard">Inicio</string>
+    <string name="nav_energy">Energía</string>
+    <string name="nav_devices">Dispositivos</string>
+    <string name="nav_security">Seguridad</string>
+
+    <string name="hint_phone">Número de Teléfono (ej. +52123...)</string>
+    <string name="btn_send_sms">Enviar SMS de Confirmación</string>
+    <string name="hint_otp">Código de Verificación</string>
+    <string name="btn_verify_otp">Verificar y Entrar</string>
+    <string name="msg_phone_empty">Ingresa un número de teléfono válido</string>
+    <string name="msg_otp_empty">Ingresa el código de verificación</string>
+    <string name="msg_otp_sent">Código enviado</string>
+    <string name="login_title">Inicio de Sesión</string>
+    <string name="app_slogan">Controla tu hogar desde cualquier lugar</string>
+    <string name="new_user_register">¿Nuevo usuario? Regístrate</string>
+</resources>

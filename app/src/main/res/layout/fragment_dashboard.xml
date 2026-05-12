@@ -1,0 +1,349 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="20dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView
+                    android:text="Hogar Inteligente"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+                <TextView
+                    android:id="@+id/tv_date"
+                    android:textSize="13sp"
+                    android:textColor="@color/text_secondary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <ImageView
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_home"
+                android:tint="@color/primary"
+                android:background="@drawable/bg_circle"
+                android:padding="8dp" />
+        </LinearLayout>
+
+        <!-- Row 1: Active Devices + Current Power -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="12dp">
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@color/surface">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+                    <TextView
+                        android:text="Dispositivos"
+                        android:textSize="12sp"
+                        android:textColor="@color/text_secondary"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:gravity="bottom" android:layout_marginTop="4dp">
+                        <TextView
+                            android:id="@+id/tv_active_devices"
+                            android:textSize="32sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/primary"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+                        <TextView
+                            android:id="@+id/tv_total_devices"
+                            android:textSize="13sp"
+                            android:textColor="@color/text_secondary"
+                            android:layout_marginBottom="4dp"
+                            android:layout_marginStart="4dp"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+                    </LinearLayout>
+                    <TextView android:text="activos ahora"
+                        android:textSize="11sp" android:textColor="@color/text_hint"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                    <ProgressBar
+                        android:id="@+id/progress_devices"
+                        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="6dp"
+                        android:layout_marginTop="10dp"
+                        android:progressTint="@color/primary"
+                        android:progressBackgroundTint="@color/divider" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@color/surface">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+                    <TextView
+                        android:text="Consumo Actual"
+                        android:textSize="12sp"
+                        android:textColor="@color/text_secondary"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                    <TextView
+                        android:id="@+id/tv_current_watts"
+                        android:textSize="28sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/accent"
+                        android:layout_marginTop="4dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                    <TextView
+                        android:id="@+id/tv_watts_status"
+                        android:textSize="11sp"
+                        android:textColor="@color/consumption_low"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                    <ProgressBar
+                        android:id="@+id/progress_watts"
+                        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="6dp"
+                        android:layout_marginTop="10dp"
+                        android:progressTint="@color/accent"
+                        android:progressBackgroundTint="@color/divider" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+        </LinearLayout>
+
+        <!-- Row 2: Today + Month costs -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="12dp">
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@color/card_today">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+                    <TextView android:text="Hoy" android:textSize="12sp" android:textColor="@color/text_secondary"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                    <TextView
+                        android:id="@+id/tv_today_kwh"
+                        android:textSize="22sp" android:textStyle="bold" android:textColor="@color/text_primary"
+                        android:layout_marginTop="4dp"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                    <TextView
+                        android:id="@+id/tv_today_cost"
+                        android:textSize="14sp" android:textColor="@color/accent"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@color/surface">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+                    <TextView android:text="Este Mes" android:textSize="12sp" android:textColor="@color/text_secondary"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                    <TextView
+                        android:id="@+id/tv_month_kwh"
+                        android:textSize="22sp" android:textStyle="bold" android:textColor="@color/text_primary"
+                        android:layout_marginTop="4dp"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                    <TextView
+                        android:id="@+id/tv_month_cost"
+                        android:textSize="14sp" android:textColor="@color/accent"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+        </LinearLayout>
+
+        <!-- Security Card -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/card_security_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:gravity="center_vertical">
+                    <ImageView
+                        android:id="@+id/iv_security_icon"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:src="@drawable/ic_shield_ok" />
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="12dp">
+                        <TextView android:text="Seguridad" android:textSize="14sp" android:textStyle="bold"
+                            android:textColor="@color/text_primary"
+                            android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                        <TextView
+                            android:id="@+id/tv_pending_alerts"
+                            android:textSize="12sp" android:textColor="@color/text_secondary"
+                            android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <View android:layout_width="match_parent" android:layout_height="1dp"
+                    android:background="@color/divider" android:layout_marginVertical="12dp" />
+
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:gravity="center_vertical">
+                    <View
+                        android:id="@+id/view_event_indicator"
+                        android:layout_width="4dp" android:layout_height="36dp"
+                        android:background="@color/alert_info"
+                        android:layout_marginEnd="12dp" />
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:orientation="vertical">
+                        <TextView
+                            android:id="@+id/tv_last_event"
+                            android:textSize="13sp" android:textColor="@color/text_primary"
+                            android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                        <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+                            <TextView
+                                android:id="@+id/tv_last_event_zone"
+                                android:textSize="11sp" android:textColor="@color/text_secondary"
+                                android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                            <TextView android:text=" · " android:textSize="11sp" android:textColor="@color/text_hint"
+                                android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                            <TextView
+                                android:id="@+id/tv_last_event_time"
+                                android:textSize="11sp" android:textColor="@color/text_hint"
+                                android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Quick Devices -->
+        <TextView android:text="Resumen de Dispositivos"
+            android:textSize="15sp" android:textStyle="bold" android:textColor="@color/text_primary"
+            android:layout_marginBottom="10dp"
+            android:layout_width="wrap_content" android:layout_height="wrap_content" />
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <androidx.cardview.widget.CardView
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:layout_marginEnd="4dp"
+                app:cardCornerRadius="12dp" app:cardElevation="1dp" app:cardBackgroundColor="@color/surface">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="vertical" android:padding="12dp" android:gravity="center">
+                    <ImageView android:layout_width="24dp" android:layout_height="24dp"
+                        android:src="@drawable/ic_lightbulb" android:tint="@color/accent" />
+                    <TextView android:text="Luces" android:textSize="11sp" android:textColor="@color/text_secondary"
+                        android:layout_marginTop="4dp"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                    <TextView android:id="@+id/tv_lights_on" android:textSize="12sp" android:textStyle="bold"
+                        android:textColor="@color/text_primary"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:layout_marginHorizontal="4dp"
+                app:cardCornerRadius="12dp" app:cardElevation="1dp" app:cardBackgroundColor="@color/surface">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="vertical" android:padding="12dp" android:gravity="center">
+                    <ImageView android:layout_width="24dp" android:layout_height="24dp"
+                        android:src="@drawable/ic_ac" android:tint="@color/primary" />
+                    <TextView android:text="Clima" android:textSize="11sp" android:textColor="@color/text_secondary"
+                        android:layout_marginTop="4dp"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                    <TextView android:id="@+id/tv_acs_on" android:textSize="12sp" android:textStyle="bold"
+                        android:textColor="@color/text_primary"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:layout_marginStart="4dp"
+                app:cardCornerRadius="12dp" app:cardElevation="1dp" app:cardBackgroundColor="@color/surface">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="vertical" android:padding="12dp" android:gravity="center">
+                    <ImageView android:layout_width="24dp" android:layout_height="24dp"
+                        android:src="@drawable/ic_tv" android:tint="@color/text_secondary" />
+                    <TextView android:text="TV / Media" android:textSize="11sp" android:textColor="@color/text_secondary"
+                        android:layout_marginTop="4dp"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                    <TextView android:id="@+id/tv_tvs_on" android:textSize="12sp" android:textStyle="bold"
+                        android:textColor="@color/text_primary"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+        </LinearLayout>
+
+        <View android:layout_width="match_parent" android:layout_height="16dp" />
+
+    </LinearLayout>
+</ScrollView>

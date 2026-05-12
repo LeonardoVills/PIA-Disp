@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand Colors -->
+    <color name="primary">#2563EB</color>
+    <color name="primary_light">#DBEAFE</color>
+    <color name="primary_dark">#1E40AF</color>
+    <color name="accent">#F59E0B</color>
+    <color name="accent_light">#FEF3C7</color>
+
+    <!-- Backgrounds -->
+    <color name="background">#F1F5F9</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="surface_variant">#E2E8F0</color>
+
+    <!-- Text -->
+    <color name="text_primary">#0F172A</color>
+    <color name="text_secondary">#475569</color>
+    <color name="text_hint">#94A3B8</color>
+
+    <!-- Alert Colors -->
+    <color name="alert_critical">#DC2626</color>
+    <color name="alert_warning">#D97706</color>
+    <color name="alert_info">#2563EB</color>
+    <color name="alert_safe">#16A34A</color>
+
+    <!-- Card States -->
+    <color name="card_active">#EFF6FF</color>
+    <color name="card_inactive">#F8FAFC</color>
+    <color name="card_alert">#FEF2F2</color>
+    <color name="card_safe">#F0FDF4</color>
+    <color name="card_today">#FFFBEB</color>
+    <color name="card_critical">#FEF2F2</color>
+    <color name="card_critical_light">#FFF5F5</color>
+
+    <!-- Consumption -->
+    <color name="consumption_low">#16A34A</color>
+    <color name="consumption_medium">#D97706</color>
+    <color name="consumption_high">#DC2626</color>
+
+    <!-- Misc -->
+    <color name="divider">#E2E8F0</color>
+
+    <!-- Bottom nav -->
+    <color name="bottom_nav_selected">@color/primary</color>
+    <color name="bottom_nav_unselected">@color/text_hint</color>
+</resources>
