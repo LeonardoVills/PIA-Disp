@@ -1,16 +1,24 @@
 package com.smarthome.dashboard.ui.energy
 
+import android.content.Intent
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.github.mikephil.charting.components.XAxis
+import kotlinx.coroutines.launch
 import com.github.mikephil.charting.data.*
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.github.mikephil.charting.formatter.ValueFormatter
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
 import com.smarthome.dashboard.R
 import com.smarthome.dashboard.data.repository.SmartHomeRepository
 import com.smarthome.dashboard.databinding.FragmentEnergyBinding
@@ -20,6 +28,18 @@ class EnergyFragment : Fragment() {
     private var _binding: FragmentEnergyBinding? = null
     private val binding get() = _binding!!
     private var currentPeriod = PeriodType.HOURLY
+    private var usageAdapter: DeviceUsageAdapter? = null
+
+    private val barcodeLauncher = registerForActivityResult(ScanContract()) { result ->
+        if (result.contents == null) {
+            Toast.makeText(requireContext(), "Escaneo cancelado", Toast.LENGTH_SHORT).show()
+        } else {
+            // Redirigir al portal de pagos de CFE
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://app.cfe.mx/Aplicaciones/CCFE/Recibos/Consulta/Consulta.aspx"))
+            startActivity(intent)
+            Toast.makeText(requireContext(), "Redirigiendo a pago CFE...", Toast.LENGTH_LONG).show()
+        }
+    }
 
     enum class PeriodType { HOURLY, DAILY, MONTHLY }
 
@@ -31,8 +51,32 @@ class EnergyFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupPeriodTabs()
-        loadHourlyData()
-        setupDeviceUsageList()
+        observeData()
+        setupScannerButton()
+    }
+
+    private fun observeData() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            SmartHomeRepository.devicesFlow.collect {
+                if (currentPeriod == PeriodType.HOURLY) {
+                    loadHourlyData()
+                }
+                setupDeviceUsageList()
+            }
+        }
+    }
+
+    private fun setupScannerButton() {
+        binding.btnScanBill.setOnClickListener {
+            val options = ScanOptions()
+            options.setDesiredBarcodeFormats(ScanOptions.ALL_CODE_TYPES)
+            options.setPrompt("Escanea el código de barras de tu recibo CFE")
+            options.setCameraId(0)
+            options.setBeepEnabled(true)
+            options.setBarcodeImageEnabled(true)
+            options.setOrientationLocked(false)
+            barcodeLauncher.launch(options)
+        }
     }
 
     private fun setupPeriodTabs() {
@@ -166,8 +210,13 @@ class EnergyFragment : Fragment() {
 
     private fun setupDeviceUsageList() {
         val stats = SmartHomeRepository.getDeviceUsageStats()
-        val adapter = DeviceUsageAdapter(stats.take(8))
-        binding.rvDeviceUsage.adapter = adapter
+        if (usageAdapter == null) {
+            usageAdapter = DeviceUsageAdapter(stats.take(8))
+            binding.rvDeviceUsage.layoutManager = LinearLayoutManager(requireContext())
+            binding.rvDeviceUsage.adapter = usageAdapter
+        } else {
+            usageAdapter?.updateStats(stats.take(8))
+        }
     }
 
     override fun onDestroyView() {

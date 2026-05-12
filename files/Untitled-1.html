@@ -234,28 +234,52 @@ async function listenFirebase() {
     realUID = userRealData.adminId || uidBuscado;
     isLimitedMode = !!userRealData.adminId;
 
-    if (isLimitedMode) {
-        document.getElementById("admin-controls").classList.add("hidden");
-        statusMsg.innerText = "Modo Hijo Conectado (Solo control)";
-    } else {
-        document.getElementById("admin-controls").classList.remove("hidden");
-        statusMsg.innerText = "Modo Admin Conectado";
-    }
+    // --- NUEVO: Petición de Sincronización ---
+    statusMsg.innerText = "🔔 Solicitando permiso...";
+    statusMsg.style.color = "blue";
 
-    snapshotUnsubscribe = db.collection("dispositivos")
-      .where("propietarioUid", "==", realUID)
-      .onSnapshot((snapshot) => {
-        dispositivos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        statusMsg.style.color = "green";
-        actualizarModelo3D();
-        actualizarUI();
-      });
+    const requestRef = await db.collection("solicitudes_conexion").add({
+      codigoSync: syncId,
+      propietarioUid: uidBuscado,
+      estado: "pendiente",
+      autorizado: false,
+      tiempoSolicitud: firebase.firestore.FieldValue.serverTimestamp()
+    });
 
+    // Escuchar respuesta de la App
+    requestRef.onSnapshot((doc) => {
+      const data = doc.data();
+      if (data.estado === "autorizado" && data.autorizado === true) {
+        iniciarSincronizacion(realUID, statusMsg);
+      } else if (data.estado === "rechazado") {
+        statusMsg.innerText = "❌ Petición Rechazada";
+        statusMsg.style.color = "red";
+      }
+    });
   } catch (error) {
     console.error("Error en Firebase:", error);
     statusMsg.innerText = "❌ Error de conexión";
     statusMsg.style.color = "red";
   }
+}
+
+function iniciarSincronizacion(uid, statusMsg) {
+    if (isLimitedMode) {
+        document.getElementById("admin-controls").classList.add("hidden");
+        statusMsg.innerText = "✅ Sincronizado (Modo Hijo)";
+    } else {
+        document.getElementById("admin-controls").classList.remove("hidden");
+        statusMsg.innerText = "✅ Sincronizado (Modo Admin)";
+    }
+    statusMsg.style.color = "green";
+
+    snapshotUnsubscribe = db.collection("dispositivos")
+      .where("propietarioUid", "==", uid)
+      .onSnapshot((snapshot) => {
+        dispositivos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        actualizarModelo3D();
+        actualizarUI();
+      });
 }
 
 async function agregarFirebase() {

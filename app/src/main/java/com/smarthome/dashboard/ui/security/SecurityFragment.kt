@@ -18,7 +18,6 @@ import com.journeyapps.barcodescanner.ScanOptions
 import com.smarthome.dashboard.MainActivity
 import com.smarthome.dashboard.R
 import com.smarthome.dashboard.data.models.AlertLevel
-import com.smarthome.dashboard.data.models.SecurityEvent
 import com.smarthome.dashboard.data.repository.FirebaseRepository
 import com.smarthome.dashboard.data.repository.SmartHomeRepository
 import com.smarthome.dashboard.data.session.SessionManager

@@ -25,10 +25,44 @@ object SmartHomeRepository {
     private var securityListener: ListenerRegistration? = null
     
     private val repositoryScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private var lastUpdateTimestamp: Long = System.currentTimeMillis()
 
     init {
         devices = emptyList()
         startGlobalObservation()
+        startRealTimeEnergyCalculation()
+    }
+
+    private fun startRealTimeEnergyCalculation() {
+        repositoryScope.launch {
+            while (isActive) {
+                delay(5000) // Actualizar cada 5 segundos
+                val now = System.currentTimeMillis()
+                val elapsedMillis = now - lastUpdateTimestamp
+                lastUpdateTimestamp = now
+
+                if (elapsedMillis <= 0) continue
+
+                val currentDevices = devices
+                if (currentDevices.isEmpty()) continue
+
+                val updatedDevices = currentDevices.map { device ->
+                    if (device.isActive) {
+                        // Incrementar minutos de uso (aproximado)
+                        val additionalMinutes = (elapsedMillis.toDouble() / 60000.0)
+                        device.copy(
+                            usageMinutesToday = device.usageMinutesToday + additionalMinutes
+                        )
+                    } else {
+                        device
+                    }
+                }
+                
+                if (updatedDevices != currentDevices) {
+                    _devices.value = updatedDevices
+                }
+            }
+        }
     }
 
     private fun startGlobalObservation() {
@@ -61,8 +95,8 @@ object SmartHomeRepository {
                     isActive = map["encendido"] as? Boolean ?: false,
                     powerConsumptionWatts = (map["potenciaWatts"] as? Number)?.toDouble() ?: 0.0,
                     maxWatts = (map["maxWatts"] as? Number)?.toDouble() ?: 100.0,
-                    usageMinutesToday = (map["minutosUsoHoy"] as? Number)?.toInt() ?: 0,
-                    usageMinutesThisWeek = (map["minutosUsoSemana"] as? Number)?.toInt() ?: 0
+                    usageMinutesToday = (map["minutosUsoHoy"] as? Number)?.toDouble() ?: 0.0,
+                    usageMinutesThisWeek = (map["minutosUsoSemana"] as? Number)?.toDouble() ?: 0.0
                 )
             }
         }
@@ -149,30 +183,77 @@ object SmartHomeRepository {
     }
 
     fun getDeviceUsageStats(): List<DeviceUsageStat> {
-        val totalMinutes = devices.sumOf { it.usageMinutesToday }.coerceAtLeast(1)
-        return devices.map { device ->
-            DeviceUsageStat(device, device.usageMinutesToday, (device.usageMinutesToday.toFloat() / totalMinutes * 100), 20)
+        val currentDevices = devices
+        val totalMinutes = currentDevices.sumOf { it.usageMinutesToday }.coerceAtLeast(1.0)
+        return currentDevices.map { device ->
+            val percentage = (device.usageMinutesToday / totalMinutes * 100.0).toFloat()
+            DeviceUsageStat(device, device.usageMinutesToday, percentage, 12)
         }.sortedByDescending { it.totalMinutes }
     }
 
-    fun getHourlyConsumption(): List<HourlyConsumption> = (0..23).map { hour ->
-        val kwh = Random.nextDouble(0.3, 1.8)
-        HourlyConsumption(hour, kwh, kwh * 2.85)
+    fun getHourlyConsumption(): List<HourlyConsumption> {
+        val currentTotalKwh = (getCurrentTotalWatts() / 1000.0).coerceAtLeast(0.05)
+        val calendar = Calendar.getInstance()
+        val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
+
+        return (0..23).map { hour ->
+            // Curva de campana dual: Pico principal a las 20h, Secundario a las 8h
+            // Usamos Math.pow para asegurar compatibilidad
+            val eveningPeak = Math.exp(-Math.pow(hour - 20.0, 2.0) / 30.0)
+            val morningPeak = Math.exp(-Math.pow(hour - 8.0, 2.0) / 20.0)
+            val bellFactor = (eveningPeak + 0.4 * morningPeak + 0.1).coerceIn(0.1, 1.5)
+            
+            val kwh = when {
+                hour < currentHour -> {
+                    // Simular consumo pasado siguiendo la campana
+                    (currentTotalKwh * bellFactor * (0.85 + Random.nextDouble(0.3))).coerceAtLeast(0.02)
+                }
+                hour == currentHour -> currentTotalKwh
+                else -> 0.0 // Futuro
+            }
+            HourlyConsumption(hour, kwh, kwh * 2.85)
+        }
     }
 
     fun getDailyConsumption(): List<DailyConsumption> {
         val days = listOf("Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom")
-        return days.map { DailyConsumption(it, Random.nextDouble(10.0, 15.0), 30.0) }
+        return days.mapIndexed { index, day ->
+            // Incremento en fines de semana (Sáb y Dom)
+            val weekendBoost = if (index >= 5) 1.4 else 1.0
+            val kwh = (12.0 + Random.nextDouble(4.0)) * weekendBoost
+            DailyConsumption(day, kwh, kwh * 2.85)
+        }
     }
 
     fun getMonthlyConsumption(): List<MonthlyConsumption> {
         val months = listOf("Sep", "Oct", "Nov", "Dic", "Ene", "Feb")
-        return months.map { MonthlyConsumption(it, 300.0, 800.0) }
+        return months.mapIndexed { index, month ->
+            // Curva estacional (sinusoide suave)
+            val variation = 1.0 + Math.sin(index.toDouble() * 0.7) * 0.25
+            val kwh = 320.0 * variation + Random.nextDouble(30.0)
+            MonthlyConsumption(month, kwh, kwh * 2.85)
+        }
     }
 
     fun getCurrentTotalWatts(): Double = devices.filter { it.isActive }.sumOf { it.powerConsumptionWatts }
 
-    fun getTodayKwh(): Double = getHourlyConsumption().sumOf { it.totalKwh }
+    /**
+     * Calcula el consumo acumulado real basándose en el tiempo encendido.
+     * Si un dispositivo de 100W está encendido 1 hora = 0.1 kWh.
+     * Si está encendido 24 horas = 2.4 kWh.
+     */
+    fun getTodayKwh(): Double {
+        // En una implementación real, esto consultaría la subcolección 'lecturas' en Firestore.
+        // Para tiempo real, sumamos el consumo base de las lecturas de hoy más el tiempo activo actual.
+        val baseKwh = 0.0 // Aquí vendrían los datos de la DB
+        
+        return devices.filter { it.isActive }.sumOf { device ->
+            // Fórmula: (Watts * Horas) / 1000 = kWh
+            // Simulamos que el dispositivo lleva X tiempo encendido para ver la variación
+            val hoursActive = device.usageMinutesToday / 60.0
+            (device.powerConsumptionWatts * hoursActive) / 1000.0
+        }.coerceAtLeast(baseKwh)
+    }
 
     fun getDashboardSummary(): DashboardSummary {
         val allEvents = _securityEvents.value

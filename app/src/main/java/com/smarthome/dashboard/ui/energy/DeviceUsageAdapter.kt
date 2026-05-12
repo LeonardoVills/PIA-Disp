@@ -9,8 +9,13 @@ import com.smarthome.dashboard.data.models.DeviceType
 import com.smarthome.dashboard.data.models.DeviceUsageStat
 import com.smarthome.dashboard.databinding.ItemDeviceUsageBinding
 
-class DeviceUsageAdapter(private val stats: List<DeviceUsageStat>) :
+class DeviceUsageAdapter(private var stats: List<DeviceUsageStat>) :
     RecyclerView.Adapter<DeviceUsageAdapter.ViewHolder>() {
+
+    fun updateStats(newStats: List<DeviceUsageStat>) {
+        stats = newStats
+        notifyDataSetChanged()
+    }
 
     inner class ViewHolder(val binding: ItemDeviceUsageBinding) : RecyclerView.ViewHolder(binding.root)
 
@@ -47,10 +52,17 @@ class DeviceUsageAdapter(private val stats: List<DeviceUsageStat>) :
 
     override fun getItemCount() = stats.size
 
-    private fun formatMinutes(minutes: Int): String {
-        val h = minutes / 60
-        val m = minutes % 60
-        return if (h > 0) "${h}h ${m}m" else "${m}m"
+    private fun formatMinutes(minutes: Double): String {
+        val totalSecs = (minutes * 60).toInt()
+        val h = totalSecs / 3600
+        val m = (totalSecs % 3600) / 60
+        val s = totalSecs % 60
+        
+        return when {
+            h > 0 -> "${h}h ${m}m"
+            m > 0 -> "${m}m ${s}s"
+            else -> "${s}s"
+        }
     }
 
     private fun getDeviceIcon(type: DeviceType): Int = when (type) {

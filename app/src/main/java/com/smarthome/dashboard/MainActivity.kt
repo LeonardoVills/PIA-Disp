@@ -28,6 +28,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private var securityBadge: BadgeDrawable? = null
+    private var syncListener: com.google.firebase.firestore.ListenerRegistration? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,6 +46,43 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         
         setSupportActionBar(binding.toolbar)
+
+        // Solicitar permiso de notificaciones (Android 13+)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            androidx.core.app.ActivityCompat.requestPermissions(
+                this,
+                arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                101
+            )
+        }
+
+        // Escuchar peticiones de sincronización desde HTML
+        syncListener = FirebaseRepository.escucharPeticionesSincronizacion(currentUid) { requestId, syncCode ->
+            android.util.Log.d("SmartHomeSync", "Nueva petición recibida: $requestId para código $syncCode")
+            android.widget.Toast.makeText(this, "🔔 Nueva solicitud de conexión: $syncCode", android.widget.Toast.LENGTH_LONG).show()
+            com.smarthome.dashboard.data.repository.NotificationHelper.showSyncRequestNotification(this, requestId, "Panel Web ($syncCode)")
+        }
+
+        // Manejar clic en notificación si viene de una petición
+        val requestIdFromIntent = intent?.getStringExtra("sync_request_id")
+        val action = intent?.getStringExtra("sync_action")
+        
+        if (requestIdFromIntent != null) {
+            val name = intent.getStringExtra("requester_name") ?: "Dashboard Externo"
+            
+            // Quitar la notificacion inmediatamente
+            val nm = getSystemService(android.content.Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+            nm.cancel(com.smarthome.dashboard.data.repository.NotificationHelper.NOTIFICATION_ID)
+
+            if (action == "ACCEPT") {
+                lifecycleScope.launch {
+                    FirebaseRepository.responderPeticionSincronizacion(requestIdFromIntent, true)
+                    android.widget.Toast.makeText(this@MainActivity, "Sincronizacion Aceptada", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                mostrarDialogoSincronizacion(requestIdFromIntent, name)
+            }
+        }
 
         // IMPORTANTE: Asegurar que el SyncID esté registrado en Firestore al iniciar
         lifecycleScope.launch {
@@ -143,5 +181,28 @@ class MainActivity : AppCompatActivity() {
         } else {
             securityBadge?.isVisible = false
         }
+    }
+
+    private fun mostrarDialogoSincronizacion(requestId: String, name: String) {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Peticion de Sincronizacion")
+            .setMessage("$name quiere acceder a tu Smart Home. ¿Deseas permitirlo?")
+            .setPositiveButton("Aceptar") { _, _ ->
+                lifecycleScope.launch {
+                    FirebaseRepository.responderPeticionSincronizacion(requestId, true)
+                    android.widget.Toast.makeText(this@MainActivity, "Sincronizacion Aceptada", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Rechazar") { _, _ ->
+                lifecycleScope.launch {
+                    FirebaseRepository.responderPeticionSincronizacion(requestId, false)
+                }
+            }
+            .show()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        syncListener?.remove()
     }
 }

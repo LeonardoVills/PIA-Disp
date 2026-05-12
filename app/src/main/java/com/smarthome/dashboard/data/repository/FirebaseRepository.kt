@@ -5,6 +5,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
 import com.smarthome.dashboard.data.models.*
 import kotlinx.coroutines.tasks.await
@@ -360,6 +361,38 @@ object FirebaseRepository {
     /** Elimina un evento de seguridad */
     suspend fun eliminarEventoSeguridad(eventId: String): Boolean = try {
         db.collection("eventos_seguridad").document(eventId).delete().await()
+        true
+    } catch (e: Exception) { false }
+
+    // ════════════════════════════════════════════════════════════
+    // SINCRONIZACIÓN EXTERNA (HTML/WEB)
+    // ════════════════════════════════════════════════════════════
+
+    fun escucharPeticionesSincronizacion(uid: String, onNewRequest: (String, String) -> Unit): ListenerRegistration {
+        return db.collection("solicitudes_conexion")
+            .whereEqualTo("propietarioUid", uid)
+            .whereEqualTo("estado", "pendiente")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null || snapshot == null) return@addSnapshotListener
+                for (doc in snapshot.documentChanges) {
+                    if (doc.type == com.google.firebase.firestore.DocumentChange.Type.ADDED) {
+                        val data = doc.document.data
+                        val requestId = doc.document.id
+                        val syncCode = data["codigoSync"] as? String ?: "----"
+                        onNewRequest(requestId, syncCode)
+                    }
+                }
+            }
+    }
+
+    suspend fun responderPeticionSincronizacion(requestId: String, aceptada: Boolean): Boolean = try {
+        db.collection("solicitudes_conexion").document(requestId).update(
+            mapOf(
+                "estado" to if (aceptada) "autorizado" else "rechazado",
+                "autorizado" to aceptada,
+                "updatedAt" to Timestamp.now()
+            )
+        ).await()
         true
     } catch (e: Exception) { false }
 

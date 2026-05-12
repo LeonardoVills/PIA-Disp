@@ -27,8 +27,8 @@ class EnergyWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx
                     isActive = map["encendido"] as? Boolean ?: false,
                     powerConsumptionWatts = (map["potenciaWatts"] as? Number)?.toDouble() ?: 0.0,
                     maxWatts = (map["maxWatts"] as? Number)?.toDouble() ?: 100.0,
-                    usageMinutesToday = (map["minutosUsoHoy"] as? Number)?.toInt() ?: 0,
-                    usageMinutesThisWeek = (map["minutosUsoSemana"] as? Number)?.toInt() ?: 0
+                    usageMinutesToday = (map["minutosUsoHoy"] as? Number)?.toDouble() ?: 0.0,
+                    usageMinutesThisWeek = (map["minutosUsoSemana"] as? Number)?.toDouble() ?: 0.0
                 )
             }
 
@@ -45,8 +45,8 @@ class EnergyWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx
                 // 3. Actualizar contadores de tiempo si está encendido
                 if (device.isActive) {
                     val nuevosCampos = mapOf(
-                        "minutosUsoHoy" to (device.usageMinutesToday + 60),
-                        "minutosUsoSemana" to (device.usageMinutesThisWeek + 60)
+                        "minutosUsoHoy" to (device.usageMinutesToday + 60.0),
+                        "minutosUsoSemana" to (device.usageMinutesThisWeek + 60.0)
                     )
                     FirebaseRepository.actualizarDispositivo(device.id, nuevosCampos)
                 }

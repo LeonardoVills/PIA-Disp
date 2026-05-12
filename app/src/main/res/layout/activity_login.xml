@@ -60,24 +60,53 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="24dp"
-                    android:hint="@string/hint_phone"
+                    android:hint="Correo Electrónico"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-
                     <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/et_phone"
+                        android:id="@+id/et_email_login"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:inputType="phone" />
+                        android:inputType="textEmailAddress" />
+                </com.google.android.material.textfield.TextInputLayout>
 
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:hint="Contraseña"
+                    app:passwordToggleEnabled="true"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/et_password_login"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textPassword" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <Button
-                    android:id="@+id/btn_send_otp"
+                    android:id="@+id/btn_login_email"
                     android:layout_width="match_parent"
                     android:layout_height="56dp"
                     android:layout_marginTop="16dp"
-                    android:text="@string/btn_send_sms"
+                    android:text="Iniciar Sesión"
                     app:cornerRadius="8dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="16dp"
+                    android:text="O usa tu número de prueba:"
+                    android:textSize="12sp"
+                    android:alpha="0.6"/>
+
+                <Button
+                    android:id="@+id/btn_send_otp"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Entrar con Teléfono (Solo Prueba)"
+                    android:textAllCaps="false" />
             </LinearLayout>
 
             <LinearLayout

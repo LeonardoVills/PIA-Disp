@@ -25,8 +25,8 @@ data class Device(
     var isActive: Boolean = false,
     var powerConsumptionWatts: Double = 0.0,
     var maxWatts: Double = 100.0,
-    var usageMinutesToday: Int = 0,
-    var usageMinutesThisWeek: Int = 0
+    var usageMinutesToday: Double = 0.0,
+    var usageMinutesThisWeek: Double = 0.0
 )
 
 // ==================== ENERGY MODELS ====================
@@ -61,7 +61,7 @@ data class MonthlyConsumption(
 
 data class DeviceUsageStat(
     val device: Device,
-    val totalMinutes: Int,
+    val totalMinutes: Double,
     val percentageOfTotal: Float,
     val peakHour: Int
 )
