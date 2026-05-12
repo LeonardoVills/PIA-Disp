@@ -46,10 +46,6 @@ class LoginActivity : AppCompatActivity() {
         _binding.btnGoToRegister.setOnClickListener {
             startActivity(Intent(this, RegisterActivity::class.java))
         }
-        
-        _binding.btnSendOtp.setOnClickListener {
-            Toast.makeText(this, "Usa el Registro para crear una cuenta con Email", Toast.LENGTH_LONG).show()
-        }
     }
 
     private fun loginWithEmail(email: String, pass: String) {
@@ -64,22 +60,27 @@ class LoginActivity : AppCompatActivity() {
 
             result.onSuccess { uid: String ->
                 val userData = FirebaseRepository.leerUsuario(uid)
+                _binding.progressBar.visibility = View.GONE
+                _binding.btnLoginEmail.isEnabled = true
+
                 if (userData != null) {
                     val roleStr = userData["role"] as? String ?: "USER"
                     val username = userData["username"] as? String ?: "Usuario"
                     val syncId = userData["syncId"] as? String ?: uid.takeLast(4).uppercase()
                     val adminId = userData["adminId"] as? String
-                    val role = try { UserRole.valueOf(roleStr) } catch(e: Exception) { UserRole.USER }
+                    val role = try { UserRole.valueOf(roleStr.uppercase()) } catch(e: Exception) { UserRole.USER }
                     
                     val user = User(username, role, syncId, adminId)
                     SessionManager.saveSession(this@LoginActivity, user)
                     
                     navigateToMain(role)
                 } else {
-                    Toast.makeText(this@LoginActivity, "Error al obtener datos", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@LoginActivity, "Sesión iniciada, pero no se encontró perfil en la base de datos", Toast.LENGTH_LONG).show()
                 }
             }.onFailure { e: Throwable ->
-                Toast.makeText(this@LoginActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                _binding.progressBar.visibility = View.GONE
+                _binding.btnLoginEmail.isEnabled = true
+                Toast.makeText(this@LoginActivity, "Error de autenticación: ${e.message}", Toast.LENGTH_LONG).show()
             }
         }
     }

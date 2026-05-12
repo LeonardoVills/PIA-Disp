@@ -16,4 +16,8 @@
     <string name="login_title">Inicio de Sesión</string>
     <string name="app_slogan">Controla tu hogar desde cualquier lugar</string>
     <string name="new_user_register">¿Nuevo usuario? Regístrate</string>
+    <string name="msg_email_code_sent">Se ha enviado un código a tu correo. Ingrésalo para continuar:</string>
+    <string name="hint_otp_email">Código de 6 dígitos</string>
+    <string name="btn_verify_code">Verificar Código</string>
+    <string name="btn_cancel">Cancelar</string>
 </resources>
